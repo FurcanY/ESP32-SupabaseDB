@@ -13,11 +13,10 @@
 // Proje ayarları
 #include "config.h"
 
-static const char *TAG = "DB_MANAGER";
-static const char *ESP_NAME = "ESP32_FURKAN";
+static const char *TAG = "esp_tag";
+static const char *ESP_NAME = "esp_isim";
 // --- PROTOTİPLER ---
 static void _send_json_package(cJSON *json_root);
-static void _send_http_string(const char *key, const char *value);
 static void _send_http_bool(const char *key, bool value);
 
 
@@ -26,10 +25,6 @@ static void _send_http_bool(const char *key, bool value);
 
 static void _send_json_package(cJSON *json_root) {
     
-    if (!is_wifi_connected()) {
-        ESP_LOGW(TAG, "WiFi bagli degil! Log gonderilemedi.");
-        return;
-    }
 
     char *post_data = cJSON_PrintUnformatted(json_root);
     
@@ -93,32 +88,6 @@ static void _send_http_bool(const char *key, bool value) {
     cJSON_Delete(root); 
 }
 
-
-void update_variable_string (const char* key, const char *value){
-    nvs_handle_t my_handle;
-    char saved_str[64] = {0}; // Boyutu büyüttük
-    size_t len = sizeof(saved_str);
-    esp_err_t err;
-
-    err = nvs_open (NVS_NAMESPACE, NVS_READWRITE, &my_handle);
-    if (err == ESP_OK) {
-        err = nvs_get_str(my_handle, key, saved_str, &len);
-        
-        // Veri yoksa (NOT_FOUND) veya değer farklıysa
-        if (err == ESP_ERR_NVS_NOT_FOUND || strcmp(saved_str, value) != 0) {
-            
-            ESP_LOGI(TAG, "Deger guncelleniyor: %s", key);
-            nvs_set_str(my_handle, key, value);
-            nvs_commit(my_handle);
-            
-            // Sadece WiFi varsa göndermeyi dene (Fonksiyon içinde kontrol var ama buraya da ekleyebilirsin)
-            _send_http_string(key, value);
-        }
-        nvs_close(my_handle);
-    } else {
-        ESP_LOGE(TAG, "NVS Acilamadi! Hata: %s", esp_err_to_name(err));
-    }
-}
 
 void update_variable_bool(const char* key, bool value){
     nvs_handle_t my_handle;
